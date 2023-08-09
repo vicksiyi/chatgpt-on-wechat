@@ -21,6 +21,10 @@ def create_channel(channel_type):
         from channel.terminal.terminal_channel import TerminalChannel
 
         return TerminalChannel()
+    elif channel_type == "socket":
+        from channel.socket.socket_channel import SocketChannel
+
+        return SocketChannel()
     elif channel_type == "wechatmp":
         from channel.wechatmp.wechatmp_channel import WechatMPChannel
 
