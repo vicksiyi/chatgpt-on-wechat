@@ -6,7 +6,39 @@ from channel.chat_channel import ChatChannel, check_prefix
 from channel.chat_message import ChatMessage
 from common.log import logger
 from config import conf
-import socket
+import asyncio
+import websockets
+# 存储所有连接的客户端
+connected_clients = set()
+
+
+class EventEmitter:
+    def __init__(self):
+        self._listeners = {}
+
+    def on(self, event, listener):
+        if event not in self._listeners:
+            self._listeners[event] = []
+        self._listeners[event].append(listener)
+
+    def emit(self, event, *args, **kwargs):
+        if event in self._listeners:
+            for listener in self._listeners[event]:
+                listener(*args, **kwargs)
+
+    def remove_listener(self, event, listener):
+        if event in self._listeners:
+            self._listeners[event].remove(listener)
+
+    def clear_listeners(self, event=None):
+        if event is None:
+            self._listeners.clear()
+        elif event in self._listeners:
+            del self._listeners[event]
+
+# 示例用法
+def handle_event(arg):
+    print(f"Event handled: {arg}")
 
 
 class SocketMessage(ChatMessage):
@@ -29,7 +61,8 @@ class SocketMessage(ChatMessage):
 
 class SocketChannel(ChatChannel):
     NOT_SUPPORT_REPLYTYPE = [ReplyType.VOICE]
-
+    async def send_to_clients(self, msg):
+        await asyncio.gather(*[client.send(msg) for client in connected_clients])
     def send(self, reply: Reply, context: Context):
         print("\nBot:")
         if reply.type == ReplyType.IMAGE:
@@ -56,49 +89,44 @@ class SocketChannel(ChatChannel):
             print(img_url)
             img.show()
         else:
-            # print(reply.content)
-            self.client_socket.send(reply.content.encode('utf-8'))
+            print(reply.content)
+            async def send_msg():
+                for client in connected_clients:
+                    await client.send(reply.content)
+            asyncio.run(send_msg())
+            
         sys.stdout.flush()
         return
+    async def handle_client(self, websocket, path):
+            # 添加新客户端到连接列表
+            connected_clients.add(websocket)
+            try:
+                async for message in websocket:
+                    prompt = message
+                    self.msg_id += 1
+                    trigger_prefixs = conf().get("single_chat_prefix", [""])
+                    if check_prefix(prompt, trigger_prefixs) is None:
+                        prompt = trigger_prefixs[0] + prompt  # 给没触发的消息加上触发前缀
 
+                    self.context = self._compose_context(ContextType.TEXT, prompt, msg=SocketMessage(self.msg_id, prompt))
+                    if self.context:
+                        self.produce(self.context)
+                    else:
+                        raise Exception("context is None")
+            finally:
+                # 客户端断开连接时，从列表中移除
+                connected_clients.remove(websocket)
+    async def run_server(self):
+        server = await websockets.serve(self.handle_client, "localhost", 12345)
+        await server.wait_closed()
+    def start_server(self):
+        self.loop = asyncio.get_event_loop()
+        self.loop.run_until_complete(self.run_server())
+        self.loop.run_forever()
     def startup(self):
-        context = Context()
+        self.context = Context()
 
-        # 创建一个TCP套接字
-        server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.msg_id = 0
+        self.emitter = EventEmitter()
+        self.start_server()
 
-        # 绑定套接字到特定地址和端口
-        host = "127.0.0.1"
-        port = 12345
-        server_socket.bind((host, port))
-
-        # 开始监听传入的连接
-        server_socket.listen(1)
-
-        print(f"等待连接在 {host}:{port} ...")
-
-        # 等待客户端连接
-        self.client_socket, self.client_address = server_socket.accept()
-        print(f"连接成功：{self.client_socket}:{self.client_address}")
-        msg_id = 0
-        try:
-            while True:
-                received_data, addr = self.client_socket.recvfrom(1024)
-                prompt = received_data.decode('utf-8')
-                if not prompt:
-                    break
-                print(f"prompt: {prompt}")
-                msg_id += 1
-                trigger_prefixs = conf().get("single_chat_prefix", [""])
-                if check_prefix(prompt, trigger_prefixs) is None:
-                    prompt = trigger_prefixs[0] + prompt  # 给没触发的消息加上触发前缀
-
-                context = self._compose_context(ContextType.TEXT, prompt, msg=SocketMessage(msg_id, prompt))
-                if context:
-                    self.produce(context)
-                else:
-                    raise Exception("context is None")
-        except Exception as e:
-            print("An error occurred:", e)
-            self.client_socket.close()
-            server_socket.close()
