@@ -11,36 +11,6 @@ import websockets
 # 存储所有连接的客户端
 connected_clients = set()
 
-
-class EventEmitter:
-    def __init__(self):
-        self._listeners = {}
-
-    def on(self, event, listener):
-        if event not in self._listeners:
-            self._listeners[event] = []
-        self._listeners[event].append(listener)
-
-    def emit(self, event, *args, **kwargs):
-        if event in self._listeners:
-            for listener in self._listeners[event]:
-                listener(*args, **kwargs)
-
-    def remove_listener(self, event, listener):
-        if event in self._listeners:
-            self._listeners[event].remove(listener)
-
-    def clear_listeners(self, event=None):
-        if event is None:
-            self._listeners.clear()
-        elif event in self._listeners:
-            del self._listeners[event]
-
-# 示例用法
-def handle_event(arg):
-    print(f"Event handled: {arg}")
-
-
 class SocketMessage(ChatMessage):
     def __init__(
         self,
