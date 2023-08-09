@@ -97,6 +97,5 @@ class SocketChannel(ChatChannel):
         self.context = Context()
 
         self.msg_id = 0
-        self.emitter = EventEmitter()
         self.start_server()
 
