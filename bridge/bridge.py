@@ -27,6 +27,8 @@ class Bridge(object):
             self.btype["chat"] = const.BAIDU
         if conf().get("use_linkai") and conf().get("linkai_api_key"):
             self.btype["chat"] = const.LINKAI
+        if conf().get("use_langchain"):
+            self.btype["chat"] = const.LANGCHAIN
         self.bots = {}
 
     def get_bot(self, typename):

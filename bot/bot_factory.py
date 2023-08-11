@@ -41,4 +41,8 @@ def create_bot(bot_type):
         from bot.linkai.link_ai_bot import LinkAIBot
         return LinkAIBot()
 
+    elif bot_type == const.LANGCHAIN:
+        from bot.langchain.langchain_bot import LangchainBot
+        return LangchainBot()
+
     raise RuntimeError
