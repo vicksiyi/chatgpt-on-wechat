@@ -12,7 +12,7 @@ from config import conf
 
 class LangchainBot(Bot):
     def __init__(self):
-        with open('langchain_config.json') as file:
+        with open('/bot/langchain/langchain_config.json') as file:
             depend = json.load(file)
         exec(f"from {depend['folder_file']} import {depend['AIDR_Bot']} as My_Bot()")
         self.model = My_Bot()
