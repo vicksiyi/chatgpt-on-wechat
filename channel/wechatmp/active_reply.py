@@ -33,6 +33,7 @@ class Query:
                 message = channel.crypto.decrypt_message(message, args.msg_signature, args.timestamp, args.nonce)
                 encrypt_func = lambda x: channel.crypto.encrypt_message(x, args.nonce, args.timestamp)
             else:
+                logger.debug("[wechatmp] message is:"+message)
                 logger.debug("[wechatmp] Receive post data:\n" + message.decode("utf-8"))
             msg = parse_message(message)
             if msg.type in ["text", "voice", "image"]:
