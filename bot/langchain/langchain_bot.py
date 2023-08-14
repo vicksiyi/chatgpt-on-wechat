@@ -9,13 +9,14 @@ from bridge.context import Context, ContextType
 from bridge.reply import Reply, ReplyType
 from common.log import logger
 from config import conf
+#from .ai_dr.ai_dr import AI_DR as MyBot
+with open('./bot/langchain/langchain_config.json') as file:
+    depend = json.load(file)
+exec(f"from {depend['folder_file']} import {depend['bot_name']} as MyBot")
 
 class LangchainBot(Bot):
     def __init__(self):
-        with open('/bot/langchain/langchain_config.json') as file:
-            depend = json.load(file)
-        exec(f"from {depend['folder_file']} import {depend['AIDR_Bot']} as My_Bot()")
-        self.model = My_Bot()
+        self.model = MyBot()
         self.sessions = SessionManager(ChatGPTSession, model=conf().get("model") or "gpt-3.5-turbo")
 
     def reply(self, query, context: Context = None) -> Reply:
