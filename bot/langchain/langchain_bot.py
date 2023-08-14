@@ -1,7 +1,6 @@
 import time
 
-import requests
-
+import json
 from bot.bot import Bot
 from bot.chatgpt.chat_gpt_session import ChatGPTSession
 from bot.openai.open_ai_image import OpenAIImage
@@ -10,11 +9,13 @@ from bridge.context import Context, ContextType
 from bridge.reply import Reply, ReplyType
 from common.log import logger
 from config import conf
-from .ai_dr.ai_dr import AI_DR
 
 class LangchainBot(Bot):
     def __init__(self):
-        self.model = AI_DR()
+        with open('langchain_config.json') as file:
+            depend = json.load(file)
+        exec(f"from {depend['folder_file']} import {depend['AIDR_Bot']} as My_Bot()")
+        self.model = My_Bot()
         self.sessions = SessionManager(ChatGPTSession, model=conf().get("model") or "gpt-3.5-turbo")
 
     def reply(self, query, context: Context = None) -> Reply:
