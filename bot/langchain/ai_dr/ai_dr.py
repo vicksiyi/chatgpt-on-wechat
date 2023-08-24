@@ -29,7 +29,7 @@ class AI_DR(object):
         [伤寒论知识]：
         {context}
         """
-        _template = """以下是一段ChatHistory，涉及Human与一个assistant的对话，忽略assistant的回复，将Human所述进行整合：
+        _template = """System: 以下是一段ChatHistory，涉及Human与一个assistant的对话，忽略assistant的回复，将Human所述进行整合：
 
         ChatHistory:
         {chat_history}
