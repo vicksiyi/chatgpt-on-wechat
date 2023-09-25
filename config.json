@@ -1,5 +1,5 @@
 {
-  "open_ai_api_key": "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",
+  "open_ai_api_key": "",
   "model": "gpt-3.5-turbo",
   "proxy": "",
   "hot_reload": false,
@@ -41,8 +41,8 @@
   "character_desc": "你是ChatGPT, 一个由OpenAI训练的大型语言模型, 你旨在回答并解决人们的任何问题，并且可以使用多种语言与人交流。",
   "subscribe_msg": "感谢您的关注！\n这里是ChatGPT，可以自由对话。\n支持语音对话。\n支持图片输入。\n支持图片输出，画字开头的消息将按要求创作图片。\n支持tool、角色扮演和文字冒险等丰富的插件。\n输入{trigger_prefix}#help 查看详细指令。",
   "use_linkai": false,
-  "linkai_api_key": "Link_MhU6qAB5bXMN5dnshiTmgXkXAVrcYnOfyXxc0ki5ut",
-  "linkai_app_code": "fch78xSa",
+  "linkai_api_key": "",
+  "linkai_app_code": "",
   "use_langchain": true,
   "channel_type":"wx"
 }
