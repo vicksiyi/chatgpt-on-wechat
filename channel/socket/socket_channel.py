@@ -11,6 +11,9 @@ import websockets
 # 存储所有连接的客户端
 connected_clients = set()
 
+def safe_access(lst, index, default=None):
+    return lst[index] if len(lst) > index else default
+
 class SocketMessage(ChatMessage):
     def __init__(
         self,
@@ -70,6 +73,10 @@ class SocketChannel(ChatChannel):
     async def handle_client(self, websocket, path):
             # 添加新客户端到连接列表
             connected_clients.add(websocket)
+            details = path.split("/")
+            user_id = safe_access(details, 1, '')
+            enterprise_id = safe_access(details, 2, '')
+            from_user_id = '{}_{}'.format(user_id, enterprise_id)
             try:
                 async for message in websocket:
                     prompt = message
@@ -77,8 +84,7 @@ class SocketChannel(ChatChannel):
                     trigger_prefixs = conf().get("single_chat_prefix", [""])
                     if check_prefix(prompt, trigger_prefixs) is None:
                         prompt = trigger_prefixs[0] + prompt  # 给没触发的消息加上触发前缀
-
-                    self.context = self._compose_context(ContextType.TEXT, prompt, msg=SocketMessage(self.msg_id, prompt))
+                    self.context = self._compose_context(ContextType.TEXT, prompt, msg=SocketMessage(self.msg_id, prompt, ContextType.TEXT, from_user_id))
                     if self.context:
                         self.produce(self.context)
                     else:
