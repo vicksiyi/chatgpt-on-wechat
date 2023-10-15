@@ -93,7 +93,7 @@ class SocketChannel(ChatChannel):
                 # 客户端断开连接时，从列表中移除
                 connected_clients.remove(websocket)
     async def run_server(self):
-        server = await websockets.serve(self.handle_client, "localhost", 12345)
+        server = await websockets.serve(self.handle_client, "0.0.0.0", 8000)
         await server.wait_closed()
     def start_server(self):
         self.loop = asyncio.get_event_loop()
