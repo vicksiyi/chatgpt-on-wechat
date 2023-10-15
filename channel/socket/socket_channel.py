@@ -8,6 +8,7 @@ from common.log import logger
 from config import conf
 import asyncio
 import websockets
+import time
 # 存储所有连接的客户端
 connected_clients = set()
 
@@ -23,21 +24,27 @@ class SocketMessage(ChatMessage):
         from_user_id="User",
         to_user_id="Chatgpt",
         other_user_id="Chatgpt",
+        socket=None
     ):
         self.msg_id = msg_id
         self.ctype = ctype
         self.content = content
         self.from_user_id = from_user_id
         self.to_user_id = to_user_id
-        self.other_user_id = other_user_id
+        self.other_user_id = from_user_id
+        self.socket = socket
+    def get_from_user_id(self):
+        return self.from_user_id
+    def get_socket(self):
+        return self.socket
 
 
 class SocketChannel(ChatChannel):
     NOT_SUPPORT_REPLYTYPE = [ReplyType.VOICE]
-    async def send_to_clients(self, msg):
-        await asyncio.gather(*[client.send(msg) for client in connected_clients])
     def send(self, reply: Reply, context: Context):
         print("\nBot:")
+        client_socket = context.getKwargs()['msg'].get_socket()
+        from_user_id = context.getKwargs()['msg'].get_from_user_id()
         if reply.type == ReplyType.IMAGE:
             from PIL import Image
 
@@ -64,8 +71,10 @@ class SocketChannel(ChatChannel):
         else:
             print(reply.content)
             async def send_msg():
-                for client in connected_clients:
-                    await client.send(reply.content)
+                if client_socket and client_socket in connected_clients:
+                    await client_socket.send(reply.content)
+                else:
+                    print('send error: client socket is not connected', from_user_id)
             asyncio.run(send_msg())
             
         sys.stdout.flush()
@@ -77,6 +86,8 @@ class SocketChannel(ChatChannel):
             user_id = safe_access(details, 1, '')
             enterprise_id = safe_access(details, 2, '')
             from_user_id = '{}_{}'.format(user_id, enterprise_id)
+            current_timestamp = int(time.time())
+            other_user_id = '{}_{}'.format(from_user_id, str(current_timestamp))
             try:
                 async for message in websocket:
                     prompt = message
@@ -84,7 +95,7 @@ class SocketChannel(ChatChannel):
                     trigger_prefixs = conf().get("single_chat_prefix", [""])
                     if check_prefix(prompt, trigger_prefixs) is None:
                         prompt = trigger_prefixs[0] + prompt  # 给没触发的消息加上触发前缀
-                    self.context = self._compose_context(ContextType.TEXT, prompt, msg=SocketMessage(self.msg_id, prompt, ContextType.TEXT, from_user_id))
+                    self.context = self._compose_context(ContextType.TEXT, prompt, msg=SocketMessage(self.msg_id, prompt, ContextType.TEXT, from_user_id, "Chatgpt", other_user_id, websocket))
                     if self.context:
                         self.produce(self.context)
                     else:

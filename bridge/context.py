@@ -42,6 +42,9 @@ class Context:
             return self[key]
         except KeyError:
             return default
+    
+    def getKwargs(self):
+        return self.kwargs
 
     def __setitem__(self, key, value):
         if key == "type":
